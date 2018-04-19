@@ -1,9 +1,10 @@
 <?php
-  session_start();
-
-  require_once ('steam/steamclient.php');
+  require_once ( dirname(__FILE__) . DIRECTORY_SEPARATOR . '/php/autoload.php');
 
   $steamClient = new SteamClient();
+  $dbInterface = new DBInterface();
+
+  $dbInterface->insertIfNotExists();
 ?>
 <!DOCTYPE HTML>
 <html>
@@ -40,13 +41,13 @@
   <link href="resources/css/freelancer.min.css" rel="stylesheet">
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg bg-secondary fixed-top text-uppercase" id="mainNav">
-      <div class="container">
-        <button class="navbar-toggler navbar-toggler-right text-uppercase bg-primary text-white rounded" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-          Menu
-          <i class="fa fa-bars"></i>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarResponsive">
+  <nav class="navbar navbar-expand-lg bg-secondary fixed-top text-uppercase" id="mainNav">
+    <div class="container">
+      <button class="navbar-toggler navbar-toggler-right text-uppercase bg-primary text-white rounded" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+        Menu
+        <i class="fa fa-bars"></i>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav">
             <li class="nav-item mx-0 mx-lg-1">
               <a class="nav-link py-3 px-0 px-lg-3 rounded js-scroll-trigger" href="#portfolio">Active Duty</a>
@@ -59,10 +60,19 @@
             </li>
           </ul>
         </div>
-        <?php
-          if (!isset($_SESSION['STEAMCLIENT'])) { echo '<a class="navbar-brand js-scroll-trigger" href="?steam_callback_login"><img src="/resources/img/sits_01.png"/></a>'; }
-          else { echo '<h2 style="color: white;" class="js-scroll-trigger">Welcome back ' . $_SESSION['STEAM']['PERSONANAME'] . '</h2>';}
-        ?>
+          <?php if (!isset($_SESSION['STEAMCLIENT'])) { echo '<a class="navbar-brand js-scroll-trigger" href="?steam_callback_login"><img src="/resources/img/sits_01.png"/></a>';
+          } else { echo '
+        <div class="dropdown show">
+          <a class="btn btn-secondary dropdown-toggle" style="color: white; background-color: transparent; border-color:transparent;"" href="" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' . $_SESSION['STEAM']['PERSONANAME'] . ' <img src="' . $_SESSION['STEAM']['AVATAR'] . '" class="img-rounded">' . '</a>
+
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+            <a class="dropdown-item" href="#">My Profile</a>
+            <a class="dropdown-item" href="#">Inbox</a>
+            <a class="dropdown-item" href="#">Settings</a>
+            <a class="dropdown-item" href="?steam_callback_logout">Logout</a>
+          </div>
+        </div>
+            ';}?>
       </div>
     </nav>
 
