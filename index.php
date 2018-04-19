@@ -1,3 +1,10 @@
+<?php
+  session_start();
+
+  require_once ('steam/steamclient.php');
+
+  $steamClient = new SteamClient();
+?>
 <!DOCTYPE HTML>
 <html>
 
@@ -19,9 +26,7 @@
   <meta name="robots" content="noodp">
 
   <title>
-
-      Deepsmoke - Home
-
+        Deepsmoke
   </title>
 
   <link href="resources/css/local/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -33,19 +38,16 @@
   <link href="resources/css/local/magnific-popup/magnific-popup.css" rel="stylesheet" type="text/css">
 
   <link href="resources/css/freelancer.min.css" rel="stylesheet">
-
-
 </head>
 <body>
     <nav class="navbar navbar-expand-lg bg-secondary fixed-top text-uppercase" id="mainNav">
       <div class="container">
-        <a class="navbar-brand js-scroll-trigger" href="#page-top">Deepsmoke</a>
         <button class="navbar-toggler navbar-toggler-right text-uppercase bg-primary text-white rounded" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
           Menu
           <i class="fa fa-bars"></i>
         </button>
         <div class="collapse navbar-collapse" id="navbarResponsive">
-          <ul class="navbar-nav ml-auto">
+          <ul class="navbar-nav">
             <li class="nav-item mx-0 mx-lg-1">
               <a class="nav-link py-3 px-0 px-lg-3 rounded js-scroll-trigger" href="#portfolio">Active Duty</a>
             </li>
@@ -57,10 +59,14 @@
             </li>
           </ul>
         </div>
+        <?php
+          if (!isset($_SESSION['STEAMCLIENT'])) { echo '<a class="navbar-brand js-scroll-trigger" href="?steam_callback_login"><img src="/resources/img/sits_01.png"/></a>'; }
+          else { echo '<h2 style="color: white;" class="js-scroll-trigger">Welcome back ' . $_SESSION['STEAM']['PERSONANAME'] . '</h2>';}
+        ?>
       </div>
     </nav>
 
-    <header class="masthead bg-primary text-white text-center">
+    <header class="masthead bg-secondary text-white text-center">
       <div class="container">
         <!--<img class="img-fluid mb-5 d-block mx-auto" src="/resources/img/profile.png" alt="">-->
         <h1 class="text-uppercase mb-0">Deepsmoke</h1>
@@ -148,7 +154,7 @@
       </div>
     </section>
 
-    <section class="bg-primary text-white mb-0" id="about">
+    <section class="bg-secondary text-white mb-0" id="about">
       <div class="container">
         <h2 class="text-center text-uppercase text-white">About</h2>
         <hr class="star-light mb-5">
