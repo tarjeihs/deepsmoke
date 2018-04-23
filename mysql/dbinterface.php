@@ -1,127 +1,108 @@
 <?php
 
+require 'DBMS.php';
+
 class DBInterface {
 
-	private $dbms = NULL;
+    ##########################################################
+    #                                                        #
+    #                 DEFINED USER FUNCTIONS                 #
+    #                                                        #
+    ##########################################################
 
-	public function __construct() {
-		$this->dbms = DBMS::getInstance();
-	}
+    public function insertUserData($userData) {
 
-	public function insertSteamData() {
-		$insert =
-			'INSERT INTO account (
-			steamid,
-			communityvisibilitystate,
-			profilestate,
-			personaname,
-			lastlogoff,
-			profileurl,
-			avatar,
-			avatarmedium,
-			avatarfull,
-			personastate,
-			primaryclanid,
-			timecreated,
-			realname)
+    }
 
-			VALUES
+    public function fetchUserData($a0) {
+        if (!is_array($a0)) return;
 
-			(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        $dataType = null;
 
-		if ($prepStmt = $this->dbms->getConnection()->prepare($insert)) {
-			$prepStmt->bind_param(
-				'siisissssisis',
-				$_SESSION['STEAM']['STEAMID'],
-				$_SESSION['STEAM']['COMMUNITYVISIBILITYSTATE'],
-				$_SESSION['STEAM']['PROFILESTATE'],
-				$_SESSION['STEAM']['PERSONANAME'],
-				$_SESSION['STEAM']['LASTLOGOFF'],
-				$_SESSION['STEAM']['PROFILEURL'],
-				$_SESSION['STEAM']['AVATAR'],
-				$_SESSION['STEAM']['AVATARMEDIUM'],
-				$_SESSION['STEAM']['AVATARFULL'],
-				$_SESSION['STEAM']['PERSONASTATE'],
-				$_SESSION['STEAM']['PRIMARYCLANID'],
-				$_SESSION['STEAM']['TIMECREATED'],
-				$_SESSION['STEAM']['REALNAME']
-			);
+        switch ($a0[0]) {
+            case 'uuid':
+                $dataType = 'uuid';
+                break;
+            case 'steamid':
+                $dataType = 'steamid';
+                break;
+            default: break;
+        }
 
-			# If values are correct and healthy, insert into table
-			# Should close after execute has been called
+        $userData = array('uuid', 'personaname', 'avatar');
+        $row = $this->fetchMultipleDataTypes($userData, 'account', $dataType, $a0[1]);
 
-			$prepStmt->execute();
-			$prepStmt->close();
-		}
-	}
+        return $row;
+    }
 
-	public function updateSteamData() {
+    public function userExists($steamId) {
+        if (!isset($_SESSION['STEAMAUTH'])) return;
+        $row = $this->fetchDataRow('steamid', 'account', 'steamid', $steamId);
+        return $row != null ? true : false;
+    }
 
-	}
+    ##########################################################
+    #                                                        #
+    #               PREDEFINED FETCH FUNCTIONS               #
+    #                                                        #
+    ##########################################################
 
-	public function deleteSteamData() {
+    private function fetchDataRow($a0, $a1, $a2, $a3) {
+        $sql = "SELECT $a0 FROM $a1 WHERE $a2 = '$a3'";
+        if ($result = DBMS::getInstance()->getConnection()->query($sql)) {
+            $row = $result->fetch_row()[0];
 
-	}
+            $result->close();
+            return $row;
+        } else {
+            echo DBMS::getInstance()->getConnection()->error;
+        }
+    }
 
-	# Check if user exists within our database
-	# Search for specified user with given steamid
-	# from current session
+    #   Fetch datatype with multiple rows as multidimensional array
+    #   @param a0 is select type, define as string
+    #   @param a1 database table
+    #   @param a2 in where clause
+    #   @param a3 value
+    private function fetchDataRows($a0, $a1, $a2, $a3) {
+        $sql = "SELECT $a0 FROM $a1 WHERE $a2 = '$a3'";
+        if ($result = DBMS::getInstance()->getConnection()->query($sql)) {
+            $data[][] = array();
+            $itr = 0;
 
-	private function userExists() {
-		$steamid = $this->fetchDataRow('steamid', 'steamid', $_SESSION['STEAM']['STEAMID']);
-		return $steamid != NULL ? TRUE : FALSE;
-	}
+            while ($row = $result->fetch_array(MYSQLI_NUM)) {
+                $row_size = count($row); // count does faster calculations than sizeof alias
+                for ($i = 0; $i < $row_size; $i++) {
+                    $data[$itr][$i] = $row[$i];
+                }
+                $itr++;
+            }
 
-	public function insertIfNotExists() {
-		if (isset($_SESSION['STEAMCLIENT'])) {
-			if (!$this->userExists()) $this->insertSteamData();			
-		}
-	}
+            $result->close();
+            return $data;
+        }
+    }
 
-	public function getUserRank() {
-		$rank = $this->fetchDataRow('rank', 'steamid', $_SESSION['STEAM']['STEAMID']);
-		return $rank > 0 ? $rank : 1;
-	}
+    #   Fetch a row with multiple datatypes as array
+    #   @param a0 is select type, needs to be defined as array()
+    #   @param a1 database table
+    #   @param a2 in where clause
+    #   @param a3 value
+    private function fetchMultipleDataTypes($a0, $a1, $a2, $a3) {
+        $sql = "SELECT " . implode(', ', $a0) . " FROM $a1 WHERE $a2 = '$a3'";
+        if ($result = DBMS::getInstance()->getConnection()->query($sql)) {
 
-	# Fetches data from database by specified
-	# returning type, target and value
-	# Function returns a single value and should
-	# not be used for multiresults
-	private function fetchDataRow($type, $target, $value) {
-		$sql = 'SELECT ' . $type . ' FROM account WHERE ' . $target . '=' . $value;
-		$data = NULL;
+            $data[] = array();
+            $dataRows = count($a0);
 
-		if ($result = $this->dbms->getConnection()->query($sql)) {
-			while ($row = $result->fetch_row()) {
-				$data = $row[0];
-			}
-			$result->close();
-		}
+            while ($row = $result->fetch_array(MYSQLI_NUM)) {
+                for ($i = 0; $i < $dataRows; $i++) {
+                    $data[$i] = $row[$i];
+                }
+            }
 
-		return $data;
-	}
-
-	public function fetchDatabasePopulationRecent() {
-		$sql = 'SELECT id, steamid, realname, profileurl, rank
-			FROM account IS NOT NULL ORDER BY id DESC LIMIT 15';
-
-		$data[][] = NULL;
-		$counter = 0;
-
-		if ($result = $this->dbms->getConnection()->query($sql)) {
-			while($row = $result->fetch_row()) {
-				$data[$counter][0] = $row[0];
-				$data[$counter][1] = $row[1];
-				$data[$counter][2] = $row[2];
-				$data[$counter][3] = $row[3];
-				$data[$counter][4] = $row[4];
-
-				$counter++;
-
-			}
-
-			$result->close();
-			return $data;
-		}
-	}
+            $result->close();
+            return $data;
+        }
+    }
 }
