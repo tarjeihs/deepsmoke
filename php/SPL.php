@@ -10,7 +10,7 @@ spl_autoload_register('autoload');
 
 function autoload($className) {
 
-    $directories = array('mysql/', 'php/serialization/');
+    $directories = array('mysql/', 'php/serialization/', 'php/session/');
 
     foreach ($directories as $directory) {
         foreach (scandir($directory) as $file) {

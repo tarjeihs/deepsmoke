@@ -10,14 +10,16 @@ class DBInterface {
     #                                                        #
     ##########################################################
 
-    public function insertUserData($userData) {
-
+    public function insertUserData($steamId, $serializeableData) {
+        if (!$this->userExists($steamId)) {
+            $this->insertSerializedUserData($steamId, $serializeableData);
+        }
     }
 
     public function fetchUserData($a0) {
         if (!is_array($a0)) return;
 
-        $dataType = null;
+        $dataType = NULL;
 
         switch ($a0[0]) {
             case 'uuid':
@@ -29,16 +31,14 @@ class DBInterface {
             default: break;
         }
 
-        $userData = array('uuid', 'personaname', 'avatar');
-        $row = $this->fetchMultipleDataTypes($userData, 'account', $dataType, $a0[1]);
+        $row = $this->fetchMultipleDataTypes(array('data'), 'userdata', $dataType, $a0[1]);
 
         return $row;
     }
 
     public function userExists($steamId) {
-        if (!isset($_SESSION['STEAMAUTH'])) return;
-        $row = $this->fetchDataRow('steamid', 'account', 'steamid', $steamId);
-        return $row != null ? true : false;
+        $row = $this->fetchDataRow('steamid', 'userdata', 'steamid', $steamId);
+        return $row != NULL ? TRUE : FALSE;
     }
 
     ##########################################################
@@ -46,6 +46,18 @@ class DBInterface {
     #               PREDEFINED FETCH FUNCTIONS               #
     #                                                        #
     ##########################################################
+
+    # As reusable insert functions dont work
+    # we need to define one for each aspect
+    private function insertSerializedUserData($steamId, $serializeableData) {
+        $sql = "INSERT INTO userdata (steamid, data) VALUES (?, ?)";
+        if ($prep_stmt = DBMS::getInstance()->getConnection()->prepare($sql)) {
+            $prep_stmt->bind_param('is', $steamId, $serializeableData);
+            $prep_stmt->execute();
+
+            $prep_stmt->close();
+        }
+    }
 
     private function fetchDataRow($a0, $a1, $a2, $a3) {
         $sql = "SELECT $a0 FROM $a1 WHERE $a2 = '$a3'";
@@ -103,6 +115,8 @@ class DBInterface {
 
             $result->close();
             return $data;
+        } else {
+            echo DBMS::getInstance()->getConnection()->error;
         }
     }
 }
